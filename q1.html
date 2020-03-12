@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Minimal D3 Example</title>
+<script src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+
+<!-- A bit of CSS: change stroke color of circle on hover (white -> black) -->
+<style>
+.bubbles {
+  stroke-width: 1px;
+  stroke: black;
+  opacity: .8
+}
+.bubbles:hover {
+  stroke: black;
+}
+html, 
+body {
+margin:0; padding:0; overflow:hidden
+}
+body {
+  display: table;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  font-family: sans-serif;
+}
+#my_dataviz {
+  display: table-cell;
+  vertical-align: middle;
+  left:0; 
+  right:0;
+  top:0; 
+  bottom:0;
+  margin:auto;
+  padding-left: 200px;
+  padding-right: 200px;
+  /*this to solve "the content will not be cut when the window is smaller than the content": */
+  max-width:100%;
+  max-height:100%;
+  overflow:auto;
+}
+div.tooltip {	
+    position: absolute;			
+    pointer-events: none;			
+}
+</style>
+
+
+</head>
+<body>
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+<script>
+
+// set the dimensions and margins of the graph
+var margin = {top: 10, right: 150, bottom: 50, left: 50},
+    width = 800 - margin.left - margin.right,
+    height = 450 - margin.top - margin.bottom;
+
+var element = d3.select('#my_dataviz').node();
+viewbox_min = Math.min(element.getBoundingClientRect().width, element.getBoundingClientRect().height);
+
+// append the svg object to the body of the page
+var svg = d3.select("#my_dataviz")
+  .append("svg")
+    .attr("viewBox", "0 0 800 450")
+    .attr("preserveAspectRatio", "xMidYMid meet")
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+//Read the data
+d3.csv("data/q1.csv", function(data) {
+
+  // ---------------------------//
+  //       AXIS  AND SCALE      //
+  // ---------------------------//
+
+  // Add X axis
+  var x = d3.scaleLinear()
+    .domain([0, 10000])
+    .range([ 0, width ]);
+  svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x).ticks(3));
+
+  // Add Y axis
+  var y = d3.scaleLinear()
+    .domain([0, 1])
+    .range([ height, 0]);
+  svg.append("g")
+    .call(d3.axisLeft(y));
+
+  // text label for the y axis
+  svg.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 - margin.left)
+      .attr("x",0 - (height / 2))
+      .attr("dy", "1em")
+      .style("text-anchor", "middle")
+      .text("Life expectancy");
+  // x-axis
+  svg.append("text")             
+      .attr("transform",
+            "translate(" + (width/2) + " ," + 
+                           (height + margin.bottom - 10) + ")")
+      .style("text-anchor", "middle")
+      .text("Gdp per Capita");
+
+  // Add a scale for bubble size
+  var z = d3.scaleSqrt()
+    .domain([100, 100000])
+    .range([ 2, 30]);
+
+  // Add a scale for bubble color
+  var myColor = d3.scaleOrdinal()
+    .domain(["Asia", "Europe", "Americas", "Africa", "Oceania"])
+    .range(d3.schemeSet1);
+
+
+  // ---------------------------//
+  //      TOOLTIP               //
+  // ---------------------------//
+
+  // -1- Create a tooltip div that is hidden by default:
+  var tooltip = d3.select("#my_dataviz")
+    .append("div")
+      .style("opacity", 0)
+      .attr("class", "tooltip")
+      .style("background-color", "black")
+      .style("border-radius", "5px")
+      .style("padding", "10px")
+      .style("color", "white")
+      .style("position", "absolute")
+
+  // -2- Create 3 functions to show / update (when mouse move but stay on same circle) / hide the tooltip
+  var showTooltip = function(d) {
+    tooltip
+      .style("opacity", 1)
+      .html("Country: " + d.country)
+  }
+  var moveTooltip = function(d) {
+    tooltip
+      .style("left", (d3.event.pageX+30) + "px")
+      .style("top", (d3.event.pageY) + "px")
+  }
+  var hideTooltip = function(d) {
+    tooltip
+      .style("opacity", 0)
+  }
+
+
+  // ---------------------------//
+  //       HIGHLIGHT GROUP      //
+  // ---------------------------//
+
+  // What to do when one group is hovered
+  var highlight = function(d){
+    // reduce opacity of all groups
+    d3.selectAll(".bubbles").style("opacity", .05)
+    // expect the one that is hovered
+    d3.selectAll("."+d).style("opacity", 1)
+  }
+
+  // And when it is not hovered anymore
+  var noHighlight = function(d){
+    d3.selectAll(".bubbles").style("opacity", 1)
+  }
+
+
+  // ---------------------------//
+  //       CIRCLES              //
+  // ---------------------------//
+
+  // Add dots
+  svg.append('g')
+    .selectAll("dot")
+    .data(data)
+    .enter()
+    .append("circle")
+      .attr("class", function(d) { return "bubbles " + d.continent })
+      .attr("cx", function (d) { return x(d.gdpPercap); } )
+      .attr("cy", function (d) { return y(d.lifeExp); } )
+      .attr("r", function (d) { return z(d.pop); } )
+      .style("fill", function (d) { return myColor(d.continent); } )
+    // -3- Trigger the functions for hover
+    .on("mouseover", showTooltip )
+    .on("mousemove", moveTooltip )
+    .on("mouseleave", hideTooltip )
+
+
+
+    // ---------------------------//
+    //       LEGEND              //
+    // ---------------------------//
+
+    // Add legend: circles
+    var valuesToShow = [1000, 10000, 100000]
+    var xCircle = width + 70
+    var xLabel = xCircle + 40
+    var circle_offset = 90
+    svg
+      .selectAll("legend")
+      .data(valuesToShow)
+      .enter()
+      .append("circle")
+        .attr("cx", xCircle)
+        .attr("cy", function(d){ return height - circle_offset - z(d) } )
+        .attr("r", function(d){ return z(d) })
+        .style("fill", "none")
+        .attr("stroke", "black")
+
+    // Add legend: segments
+    svg
+      .selectAll("legend")
+      .data(valuesToShow)
+      .enter()
+      .append("line")
+        .attr('x1', function(d){ return xCircle + z(d) } )
+        .attr('x2', xLabel)
+        .attr('y1', function(d){ return height - circle_offset - z(d) } )
+        .attr('y2', function(d){ return height - circle_offset - z(d) } )
+        .attr('stroke', 'black')
+        .style('stroke-dasharray', ('2,2'))
+
+    // Add legend: labels
+    svg
+      .selectAll("legend")
+      .data(valuesToShow)
+      .enter()
+      .append("text")
+        .attr('x', xLabel)
+        .attr('y', function(d){ return height - circle_offset - z(d) } )
+        .text( function(d){ return d/1000 } )
+        .style("font-size", 10)
+        .attr('alignment-baseline', 'middle')
+
+    // Legend title
+    svg.append("text")
+      .attr('x', xCircle)
+      .attr("y", height - circle_offset + 30)
+      .text("Number Infected")
+      .attr("text-anchor", "middle")
+
+    var geo_pos = width + 50
+    // Add one dot in the legend for each name.
+    var size = 20
+    var allgroups = ["Asia", "Europe", "Americas", "Africa", "Oceania"]
+    svg.selectAll("myrect")
+      .data(allgroups)
+      .enter()
+      .append("circle")
+        .attr("cx", geo_pos)
+        .attr("cy", function(d,i){ return 10 + i*(size+5)}) // 100 is where the first dot appears. 25 is the distance between dots
+        .attr("r", 7)
+        .style("fill", function(d){ return myColor(d)})
+        .on("mouseover", highlight)
+        .on("mouseleave", noHighlight)
+
+    // Add labels beside legend dots
+    svg.selectAll("mylabels")
+      .data(allgroups)
+      .enter()
+      .append("text")
+        .attr("x", geo_pos + size*.8)
+        .attr("y", function(d,i){ return i * (size + 5) + (size/2)}) // 100 is where the first dot appears. 25 is the distance between dots
+        .style("fill", function(d){ return myColor(d)})
+        .text(function(d){ return d})
+        .attr("text-anchor", "left")
+        .style("alignment-baseline", "middle")
+        .on("mouseover", highlight)
+        .on("mouseleave", noHighlight)
+  })
+</script>
+
+</body>
+</html>
