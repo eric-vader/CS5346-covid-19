@@ -17,6 +17,10 @@ health_dict = defaultdict(int)
 for r in csv_to_dicts('health'):
     health_dict[r['Country Name']] = r['2016']
 
+goveff_dict = defaultdict(int)
+for r in csv_to_dicts('goveff'):
+    goveff_dict[r['Country/Territory']] = r['2018Estimate']
+
 country_stat = defaultdict(lambda: defaultdict(int))
 translate = {
     'Mainland China': 'China',
@@ -54,6 +58,24 @@ translate_health = {
     'Vatican City' : None,
     'Saint Barthelemy' : None,
 }
+translate_gov = {
+    'Iran': 'Iran, Islamic Rep.',
+    'South Korea': 'Korea, Rep.',
+    'Cruise': None,
+    'Hong Kong, China': 'Hong Kong SAR, China',
+    'Egypt': 'Egypt, Arab Rep.',
+    'Taiwan': 'Taiwan, China',
+    'Macau, China': 'Macao SAR, China',
+    'North Macedonia': 'Macedonia, FYR',
+    'Slovakia': 'Slovenia',
+    'Faroe Islands': None,
+    'St. Martin': None,
+    'Brunei': 'Brunei Darussalam',
+    'Bailiwick of Guernsey': 'Jersey, Channel Islands',
+    'Gibraltar': None,
+    'Vatican City': None,
+    'Saint Barthelemy': None
+}
 for r in csv_to_dicts("covid_19_data"):
 
     if "03/10/2020" != r['ObservationDate'].strip():
@@ -71,8 +93,13 @@ for r in csv_to_dicts("covid_19_data"):
     c = r['Country/Region'].strip()
     c = translate[c] if c in translate else c
 
-    c_health = translate_health[c] if c in translate_health else c
-    if not c_health in health_dict:
+    #c_health = translate_health[c] if c in translate_health else c
+    #if not c_health in health_dict:
+    #    continue
+
+    c_gov = translate_gov[c] if c in translate_gov else c
+    if not c_gov in goveff_dict:
+        print(c)
         continue
 
     confirmed = float(r['Confirmed'])
@@ -84,8 +111,8 @@ for r in csv_to_dicts("covid_19_data"):
     country_stat[c]['recovered'] += recovered
     country_stat[c]['continent'] = continent_dict[c]
     country_stat[c]['country'] = c
-    country_stat[c]['health'] = health_dict[c_health]
-
+    #country_stat[c]['health'] = health_dict[c_health]
+    country_stat[c]['goveff'] = goveff_dict[c_gov]
 
 '''
     if (recovered + deaths) > 10:
@@ -101,17 +128,17 @@ for r in country_stat.values():
     deaths = float(r['deaths'])
     recovered = float(r['recovered'])
 
-    if (recovered + deaths) > 10:
-        death_rate = deaths / (recovered + deaths)
-        print(c, death_rate)
+    if (recovered + deaths) > 50:
+        death_rate = 1.0 - deaths / (recovered + deaths)
+        #print(c, death_rate)
         d = {
             'country':c, 
             'continent':r['continent'],
             'lifeExp':death_rate,
             'pop':r['confirmed'],
-            'gdpPercap':r['health']
+            'gdpPercap':r['goveff']
         }
-        print(r['confirmed'])
+        #print(r['confirmed'])
         headers = d.keys()
         q1.append(d)
 

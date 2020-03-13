@@ -83,7 +83,7 @@ d3.csv("data/q1.csv", function(data) {
 
   // Add X axis
   var x = d3.scaleLinear()
-    .domain([0, 10000])
+    .domain(d3.extent(data, function(d) { return +d.gdpPercap; }))
     .range([ 0, width ]);
   svg.append("g")
     .attr("transform", "translate(0," + height + ")")
@@ -236,7 +236,7 @@ d3.csv("data/q1.csv", function(data) {
       .append("text")
         .attr('x', xLabel)
         .attr('y', function(d){ return height - circle_offset - z(d) } )
-        .text( function(d){ return d/1000 } )
+        .text( function(d){ return d/1000 +' K' } )
         .style("font-size", 10)
         .attr('alignment-baseline', 'middle')
 
@@ -275,6 +275,9 @@ d3.csv("data/q1.csv", function(data) {
         .style("alignment-baseline", "middle")
         .on("mouseover", highlight)
         .on("mouseleave", noHighlight)
+
+    
+
   })
 </script>
 
