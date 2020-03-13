@@ -103,14 +103,14 @@ d3.csv("data/q1.csv", function(data) {
       .attr("x",0 - (height / 2))
       .attr("dy", "1em")
       .style("text-anchor", "middle")
-      .text("Life expectancy");
+      .text("COVID-19 Mortality Rate");
   // x-axis
   svg.append("text")             
       .attr("transform",
             "translate(" + (width/2) + " ," + 
                            (height + margin.bottom - 10) + ")")
       .style("text-anchor", "middle")
-      .text("Gdp per Capita");
+      .text("Government Effectiveness");
 
   // Add a scale for bubble size
   var z = d3.scaleSqrt()

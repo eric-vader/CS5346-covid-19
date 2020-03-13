@@ -76,10 +76,9 @@ translate_gov = {
     'Vatican City': None,
     'Saint Barthelemy': None
 }
+first_update_nonzero = dict()
+last_observation_date = set()
 for r in csv_to_dicts("covid_19_data"):
-
-    if "03/10/2020" != r['ObservationDate'].strip():
-        continue
 
     last_update = None
     try:
@@ -89,6 +88,8 @@ for r in csv_to_dicts("covid_19_data"):
             last_update = datetime.datetime.strptime(r['Last Update'], '%m/%d/%y %H:%M')
         except ValueError as v:
             last_update = datetime.datetime.strptime(r['Last Update'], '%Y-%m-%dT%H:%M:%S')
+    
+    last_observation_date.add(last_update)
 
     c = r['Country/Region'].strip()
     c = translate[c] if c in translate else c
@@ -105,7 +106,18 @@ for r in csv_to_dicts("covid_19_data"):
     confirmed = float(r['Confirmed'])
     deaths = float(r['Deaths'])
     recovered = float(r['Recovered'])
-    
+
+    if not c in first_update_nonzero:
+        first_update_nonzero[c] = (confirmed, last_update)
+    else:
+        l_count, l_update = first_update_nonzero[c]
+        if l_count == 0:
+            if l_update > last_update:
+                first_update_nonzero[c] = (confirmed, last_update)
+
+    if "03/10/2020" != r['ObservationDate'].strip():
+        continue
+
     country_stat[c]['confirmed'] += confirmed
     country_stat[c]['deaths'] += deaths
     country_stat[c]['recovered'] += recovered
@@ -114,6 +126,13 @@ for r in csv_to_dicts("covid_19_data"):
     #country_stat[c]['health'] = health_dict[c_health]
     country_stat[c]['goveff'] = goveff_dict[c_gov]
 
+print_countries = set()
+
+last_updated = max(last_observation_date)
+for k,v in first_update_nonzero.items():
+    delta = last_updated - v[1]
+    if delta.days > 14:
+        print_countries.add(k)
 '''
     if (recovered + deaths) > 10:
         death_rate = deaths / (recovered + deaths)
@@ -128,11 +147,11 @@ for r in country_stat.values():
     deaths = float(r['deaths'])
     recovered = float(r['recovered'])
 
-    if (recovered + deaths) > 50:
-        death_rate = 1.0 - deaths / (recovered + deaths)
+    if (recovered + deaths) > 1 and c in print_countries:
+        death_rate = deaths / (recovered + deaths)
         #print(c, death_rate)
         d = {
-            'country':c, 
+            'country':c + ', Day '+str((last_updated-first_update_nonzero[c][1]).days), 
             'continent':r['continent'],
             'lifeExp':death_rate,
             'pop':r['confirmed'],
