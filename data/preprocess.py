@@ -153,9 +153,9 @@ for r in country_stat.values():
         d = {
             'country':c + ', Day '+str((last_updated-first_update_nonzero[c][1]).days), 
             'continent':r['continent'],
-            'lifeExp':death_rate,
-            'pop':r['confirmed'],
-            'gdpPercap':r['goveff']
+            'mortality_rate':death_rate,
+            'n_infected':r['confirmed'],
+            'gov_eff':r['goveff']
         }
         #print(r['confirmed'])
         headers = d.keys()

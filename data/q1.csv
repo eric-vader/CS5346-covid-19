@@ -1,4 +1,4 @@
-country,continent,lifeExp,pop,gdpPercap
+country,continent,mortality_rate,n_infected,gov_eff
 "China, Day 48",Asia,0.049587299579393444,80757.0,0.477128386497498
 "Italy, Day 38",Europe,0.4656826568265683,10149.0,0.41388350725174
 "Iran, Day 20",Asia,0.09629384513567174,8042.0,-0.430217295885086
