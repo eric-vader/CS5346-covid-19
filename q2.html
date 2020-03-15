@@ -212,7 +212,10 @@ d3.csv("data/q2.csv", function(data) {
       .attr('x', 0)
       .attr('y', function(d) { return yScale(d.group); })
       .attr('width', function(d) { return xScale(percentage(d.male_deaths)); })
-      .attr('height', yScale.rangeBand());
+      .attr('height', yScale.rangeBand())
+      .on("mouseover", showTooltipMale )
+      .on("mousemove", moveTooltip )
+      .on("mouseleave", hideTooltip );
 
   rightBarGroup.selectAll('.bar.right')
     .data(data)
