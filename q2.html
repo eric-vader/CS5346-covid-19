@@ -26,7 +26,10 @@
 .bar.right {
   fill: rgb(228, 26, 28);
 }
-  </style>
+.bar.death {
+  fill: black;
+}
+</style>
   
 </head>
 <body>
@@ -66,15 +69,14 @@ var svg = d3.select('#dataviz')
     .attr('transform', translation(margin.left, margin.top));
 
 d3.csv("data/q2.csv", function(data) {
-  var totalPopulation = d3.sum(data, function(d) { return d.male + d.female; }),
+  var totalPopulation = d3.sum(data, function(d) { return (+d.male) + (+d.female); }),
     percentage = function(d) { return d / totalPopulation; };
-  
   
   // find the maximum data value on either side
   //  since this will be shared by both of the x-axes
   var maxValue = Math.max(
-    d3.max(data, function(d) { return percentage(d.male); }),
-    d3.max(data, function(d) { return percentage(d.female); })
+    d3.max(data, function(d) { return percentage(+d.male); }),
+    d3.max(data, function(d) { return percentage(+d.female); })
   );
 
   // SET UP SCALES
@@ -115,13 +117,13 @@ d3.csv("data/q2.csv", function(data) {
   var xAxisRight = d3.svg.axis()
     .scale(xScale)
     .orient('bottom')
-    .tickFormat(d3.format('.1%'));
+    .tickFormat(d3.format('%'));
 
   var xAxisLeft = d3.svg.axis()
     // REVERSE THE X-AXIS SCALE ON THE LEFT SIDE BY REVERSING THE RANGE
     .scale(xScale.copy().range([pointA, 0]))
     .orient('bottom')
-    .tickFormat(d3.format('.1%'));
+    .tickFormat(d3.format('%'));
 
   // MAKE GROUPS FOR EACH SIDE OF CHART
   // scale(-1,1) is used to reverse the left side so the bars grow left instead of right
@@ -166,6 +168,29 @@ d3.csv("data/q2.csv", function(data) {
     .style("text-anchor", "middle")
     .text("Female");
 
+  var tooltip = d3.select("#dataviz")
+    .append("div")
+    .attr("class", "tooltip")
+  var showTooltipMale = function(d) {
+    tooltip
+      .style("opacity", 1)
+      .html("Ages " + d.group + ": " + d.male + " Infected, "+ d.male_deaths + " Deaths")
+  }
+  var showTooltipFemale = function(d) {
+    tooltip
+      .style("opacity", 1)
+      .html("Ages " + d.group + ": " + d.female + " Infected, "+ d.female_deaths + " Deaths")
+  }
+  var moveTooltip = function(d) {
+    tooltip
+      .style("left", (d3.event.pageX+30) + "px")
+      .style("top", (d3.event.pageY) + "px")
+  }
+  var hideTooltip = function(d) {
+    tooltip
+      .style("opacity", 0)
+  }
+
   // DRAW BARS
   leftBarGroup.selectAll('.bar.left')
     .data(data)
@@ -174,6 +199,19 @@ d3.csv("data/q2.csv", function(data) {
       .attr('x', 0)
       .attr('y', function(d) { return yScale(d.group); })
       .attr('width', function(d) { return xScale(percentage(d.male)); })
+      .attr('height', yScale.rangeBand())
+      .on("mouseover", showTooltipMale )
+      .on("mousemove", moveTooltip )
+      .on("mouseleave", hideTooltip );
+
+  // DRAW BARS
+  leftBarGroup.selectAll('.bar.death')
+    .data(data)
+    .enter().append('rect')
+      .attr('class', 'bar death')
+      .attr('x', 0)
+      .attr('y', function(d) { return yScale(d.group); })
+      .attr('width', function(d) { return xScale(percentage(d.male_deaths)); })
       .attr('height', yScale.rangeBand());
 
   rightBarGroup.selectAll('.bar.right')
@@ -183,7 +221,22 @@ d3.csv("data/q2.csv", function(data) {
       .attr('x', 0)
       .attr('y', function(d) { return yScale(d.group); })
       .attr('width', function(d) { return xScale(percentage(d.female)); })
-      .attr('height', yScale.rangeBand());
+      .attr('height', yScale.rangeBand())
+      .on("mouseover", showTooltipFemale )
+      .on("mousemove", moveTooltip )
+      .on("mouseleave", hideTooltip );
+
+  rightBarGroup.selectAll('.bar.death')
+    .data(data)
+    .enter().append('rect')
+      .attr('class', 'bar death')
+      .attr('x', 0)
+      .attr('y', function(d) { return yScale(d.group); })
+      .attr('width', function(d) { return xScale(percentage(d.female_deaths)); })
+      .attr('height', yScale.rangeBand())
+      .on("mouseover", showTooltipFemale )
+      .on("mousemove", moveTooltip )
+      .on("mouseleave", hideTooltip );
 
 })
 
